@@ -29,4 +29,4 @@ scrape_configs:
       - targets: ["localhost:9090"]
   - job_name: "eunomia_node"
     static_configs:
-      - targets: ["localhost:8528"]
+      - targets: ["192.168.87.167:8528"]

@@ -191,3 +191,4 @@ std::shared_ptr<sec_analyzer> sec_analyzer_prometheus::create_sec_analyzer_with_
   all_rules.insert(all_rules.end(), rules.begin(), rules.end());
   return std::make_shared<sec_analyzer_prometheus>(server, all_rules);
 }
+
