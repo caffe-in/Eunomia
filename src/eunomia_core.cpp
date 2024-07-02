@@ -280,10 +280,12 @@ void eunomia_core::start_sec_analyzer(void)
     if (core_config.enabled_export_types.count("prometheus"))
     {
       core_sec_analyzer = sec_analyzer_prometheus::create_sec_analyzer_with_default_rules(core_prometheus_server);
+      spdlog::info("start prometheus sec analyzer...");
     }
     else
     {
       core_sec_analyzer = sec_analyzer::create_sec_analyzer_with_default_rules();
+      spdlog::info("start sec analyzer...");
     }
   }
 }

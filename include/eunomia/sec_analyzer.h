@@ -174,7 +174,7 @@ private:
 
 public:
   virtual ~llm_rule_checker() = default;
-  llm_rule_checker(std::shared_ptr<sec_analyzer> analyzer_ptr) : rule_base(analyzer_ptr)
+  llm_rule_checker(std::shared_ptr<sec_analyzer> analyzer_ptr,std::string llm_server_url) : rule_base(analyzer_ptr),llm_server_url(llm_server_url)
   {}
   int check_rule(const tracker_event<syscall_event>&e, rule_message &msg);
 };

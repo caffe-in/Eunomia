@@ -8,6 +8,9 @@
 
 #include <spdlog/spdlog.h>
 
+#include "openai/nlohmann/json.hpp"
+#include "openai/openai.hpp"
+
 const static sec_rule_describe default_rules[] = {
   sec_rule_describe{
       .level = sec_rule_level::event,
@@ -141,6 +144,50 @@ int syscall_rule_checker::check_rule(const tracker_event<syscall_event> &e, rule
   return -1;
 }
 
+// llm rule check impletation by caffein
+
+std::string llm_rule_checker::buildDataToSend(const tracker_event<syscall_event> &e)
+{
+  nlohmann::json j;
+  j["model"] = "gpt-3.5-turbo";
+  j["prompt"] = "Evaluate syscall: " + e.data.syscall_id;  // 根据syscall_event的具体结构调整
+  j["max_tokens"] = 100;
+  j["temperature"] = 0;
+  j["messages"] = { { "role", "system" }, { "content", "Check syscall" } };
+
+  return j.dump();
+}
+std::string llm_rule_checker::sendDataToLLM(const std::string &data)
+{
+  try
+  {
+    openai::start();  // 确保OpenAI库初始化
+
+    auto completion = openai::completion().create(data);
+    return completion.dump(2);  // 返回格式化的JSON响应
+  }
+  catch (const std::exception &e)
+  {
+    std::cerr << "Exception occurred: " << e.what() << '\n';
+    return "";
+  }
+}
+
+int llm_rule_checker::parseLLMResponse(const std::string& response, rule_message& msg) {
+    auto j = nlohmann::json::parse(response);
+    msg.message = j.value("text", "");
+    return 0;  // 可以根据需要调整返回类型和错误处理
+}
+
+int llm_rule_checker::check_rule(const tracker_event<syscall_event>& e, rule_message &msg) {
+    std::string data_to_send = buildDataToSend(e);
+    std::string response = sendDataToLLM(data_to_send);
+    if (!response.empty()) {
+        return parseLLMResponse(response, msg);
+    }
+    return -1;  // 表示错误
+}
+
 /*
 
 examples:
@@ -191,4 +238,3 @@ std::shared_ptr<sec_analyzer> sec_analyzer_prometheus::create_sec_analyzer_with_
   all_rules.insert(all_rules.end(), rules.begin(), rules.end());
   return std::make_shared<sec_analyzer_prometheus>(server, all_rules);
 }
-
