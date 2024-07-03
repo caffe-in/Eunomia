@@ -14,6 +14,7 @@ project(
 # Set project options
 #
 
+
 include(cmake/StandardSettings.cmake)
 include(cmake/StaticAnalyzers.cmake)
 include(cmake/Utils.cmake)
@@ -60,6 +61,7 @@ endif()
 
 # Find all headers and implementation files
 include(cmake/SourcesAndHeaders.cmake)
+find_package(CURL REQUIRED)
 
 if(${PROJECT_NAME}_BUILD_EXECUTABLE)
   add_executable(${PROJECT_NAME} ${exe_sources})
@@ -108,7 +110,10 @@ else()
     endforeach()
   endif()
 endif()
-
+if (CURL_FOUND)
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${CURL_LIBRARIES})
+  target_include_directories(${PROJECT_NAME} PRIVATE ${CURL_INCLUDE_DIRS})
+endif()
 set_target_properties(
   ${PROJECT_NAME}
   PROPERTIES
