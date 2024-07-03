@@ -156,13 +156,20 @@ int main(int argc, char* argv[])
 
   switch (selected)
   {
-    case eunomia_mode::run: run_mode_operation(run_tracker_selected, run_with_extra_args, core_config); break;
+    case eunomia_mode::run: 
+      std::cout << "run mode\n";
+      run_mode_operation(run_tracker_selected, run_with_extra_args, core_config); break;
     case eunomia_mode::safe:
+      std::cout << "safe mode\n";
       core_config.enable_sec_rule_detect = true;
       safe_mode_opertiaon(core_config);
       break;
-    case eunomia_mode::server: server_mode_operation(load_from_config_file, core_config); break;
-    case eunomia_mode::seccomp: seccomp_mode_operation(core_config); break;
+    case eunomia_mode::server: 
+      std::cout<<"server mode\n";
+      server_mode_operation(load_from_config_file, core_config); break;
+    case eunomia_mode::seccomp: 
+      std::cout<<"seccomp mode\n";
+      seccomp_mode_operation(core_config); break;
     case eunomia_mode::help: std::cout << clipp::make_man_page(cli, argv[0]); break;
   }
   return 0;

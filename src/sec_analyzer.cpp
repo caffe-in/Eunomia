@@ -150,10 +150,10 @@ std::string llm_rule_checker::buildDataToSend(const tracker_event<syscall_event>
 {
   nlohmann::json j;
   j["model"] = "gpt-3.5-turbo";
-  j["prompt"] = "Evaluate syscall: " + e.data.syscall_id;  // 根据syscall_event的具体结构调整
+  j["prompt"] = "Evaluate syscall id: " + e.data.syscall_id;  // 根据syscall_event的具体结构调整
   j["max_tokens"] = 100;
   j["temperature"] = 0;
-  j["messages"] = { { "role", "system" }, { "content", "Check syscall" } };
+  j["messages"] = { { "role", "system" }, { "content", "Check syscall, if the syscall may be dangerous, please tell me" } };
 
   return j.dump();
 }
@@ -185,7 +185,11 @@ int llm_rule_checker::check_rule(const tracker_event<syscall_event>& e, rule_mes
     if (!response.empty()) {
         return parseLLMResponse(response, msg);
     }
-    return -1;  // 表示错误
+    else {
+      std::cout << "LLM response is empty" << std::endl;
+      return -1;  // 表示错误
+    }
+
 }
 
 /*
