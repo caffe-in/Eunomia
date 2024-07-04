@@ -176,6 +176,7 @@ std::string llm_rule_checker::sendDataToLLM(const std::string &data)
 int llm_rule_checker::parseLLMResponse(const std::string& response, rule_message& msg) {
     auto j = nlohmann::json::parse(response);
     msg.message = j.value("text", "");
+    exit(0);
     return 0;  // 可以根据需要调整返回类型和错误处理
 }
 
@@ -183,6 +184,7 @@ int llm_rule_checker::check_rule(const tracker_event<syscall_event>& e, rule_mes
     std::string data_to_send = buildDataToSend(e);
     std::string response = sendDataToLLM(data_to_send);
     if (!response.empty()) {
+        std::cout<<"response is not empty"<<std::endl;
         return parseLLMResponse(response, msg);
     }
     else {

@@ -158,6 +158,7 @@ int main(int argc, char* argv[])
   {
     case eunomia_mode::run: 
       std::cout << "run mode\n";
+      std::cout << "run_tracker_selected:"<<run_tracker_selected<<std::endl;
       run_mode_operation(run_tracker_selected, run_with_extra_args, core_config); break;
     case eunomia_mode::safe:
       std::cout << "safe mode\n";

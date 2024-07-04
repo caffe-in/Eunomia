@@ -67,8 +67,8 @@ docs: generate-tools ## generate Doxygen HTML documentation, including API docs
 install: generate-tools ## install the package to the `INSTALL_LOCATION`
 	rm -rf build/
 	cmake -Bbuild -DCMAKE_INSTALL_PREFIX=$(INSTALL_LOCATION) -DCMAKE_BUILD_TYPE=Release
-	cmake --build build --config Release -j 4
-	cmake --build build --target install --config Release -j 4
+	cmake --build build --config Release -j 6
+	cmake --build build --target install --config Release -j 6
 
 format: ## format the project sources
 	cmake -Bbuild
