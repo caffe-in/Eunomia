@@ -240,7 +240,7 @@ void eunomia_core::start_trackers(void)
     (void)start_tracker(t);
   }
 }
-
+ 
 void eunomia_core::check_auto_exit(void)
 {
   if (core_config.exit_after > 0)

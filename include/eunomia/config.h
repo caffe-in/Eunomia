@@ -78,7 +78,8 @@ struct eunomia_config_data
     { "process", {}, {} },
     { "files", {}, {} },
     { "tcpconnect", {}, {} },
-    // {"syscall",{},{}}
+    {"syscall",{},{}},
+    {"llm",{},{}}
   };
   /// use the config data from enabled_trackers,
 

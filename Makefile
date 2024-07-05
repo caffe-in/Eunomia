@@ -62,13 +62,13 @@ docs: generate-tools ## generate Doxygen HTML documentation, including API docs
 	mkdir docs/html/doc/
 	cp -r doc/imgs docs/html/
 	cp -r doc/imgs docs/html/doc/
-	$(BROWSER) docs/html/index.html
+	$(BROWSER) docs/html/index.htmlz
 
 install: generate-tools ## install the package to the `INSTALL_LOCATION`
 	rm -rf build/
-	cmake -Bbuild -DCMAKE_INSTALL_PREFIX=$(INSTALL_LOCATION) -DCMAKE_BUILD_TYPE=Release
-	cmake --build build --config Release -j 6
-	cmake --build build --target install --config Release -j 6
+	cmake -Bbuild -DCMAKE_INSTALL_PREFIX=$(INSTALL_LOCATION) -DCMAKE_BUILD_TYPE=Debug
+	cmake --build build --config Debug -j 6
+	cmake --build build --target install --config Debug -j 6
 
 format: ## format the project sources
 	cmake -Bbuild

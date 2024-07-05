@@ -13,6 +13,9 @@
 #include "prometheus_server.h"
 #include "syscall.h"
 #include <curl/curl.h>
+#include <json.hpp>
+
+using json = nlohmann::json;
 
 /// sec rules info level
 enum class sec_rule_level
@@ -167,15 +170,17 @@ class llm_rule_checker : public rule_base<syscall_event>
 {
 private:
     std::string llm_server_url;
-    std::string buildDataToSend(const tracker_event<syscall_event>& e);
-    std::string sendDataToLLM(const std::string& data);
+    json buildDataToSend(const tracker_event<syscall_event>& e);
+    std::string sendDataToLLM(const json& data);
     static size_t writeCallback(void* contents, size_t size, size_t nmemb, void* userp);
     int parseLLMResponse(const std::string& response, rule_message& msg);
 
 public:
   virtual ~llm_rule_checker() = default;
   llm_rule_checker(std::shared_ptr<sec_analyzer> analyzer_ptr) : rule_base(analyzer_ptr)
-  {}
+  {
+    std::cout<<"llm_rule_checker created"<<std::endl;
+  }
   int check_rule(const tracker_event<syscall_event>&e, rule_message &msg);
 };
 #endif

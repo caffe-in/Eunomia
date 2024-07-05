@@ -146,18 +146,19 @@ int syscall_rule_checker::check_rule(const tracker_event<syscall_event> &e, rule
 
 // llm rule check impletation by caffein
 
-std::string llm_rule_checker::buildDataToSend(const tracker_event<syscall_event> &e)
+json llm_rule_checker::buildDataToSend(const tracker_event<syscall_event> &e)
 {
   nlohmann::json j;
   j["model"] = "gpt-3.5-turbo";
-  j["prompt"] = "Evaluate syscall id: " + e.data.syscall_id;  // 根据syscall_event的具体结构调整
+  j["prompt"] =
+      "Evaluate syscall : " + std::string(syscall_names_x86_64[e.data.syscall_id]);  // 根据syscall_event的具体结构调整
   j["max_tokens"] = 100;
   j["temperature"] = 0;
-  j["messages"] = { { "role", "system" }, { "content", "Check syscall, if the syscall may be dangerous, please tell me" } };
-
-  return j.dump();
+  j["messages"] = nlohmann::json::array(
+      {{ { "role", "system" }, { "content", "Check syscall, if the syscall may be dangerous, please tell me" } }});
+  return j;
 }
-std::string llm_rule_checker::sendDataToLLM(const std::string &data)
+std::string llm_rule_checker::sendDataToLLM(const json &data)
 {
   try
   {
@@ -173,25 +174,31 @@ std::string llm_rule_checker::sendDataToLLM(const std::string &data)
   }
 }
 
-int llm_rule_checker::parseLLMResponse(const std::string& response, rule_message& msg) {
-    auto j = nlohmann::json::parse(response);
-    msg.message = j.value("text", "");
-    exit(0);
-    return 0;  // 可以根据需要调整返回类型和错误处理
+int llm_rule_checker::parseLLMResponse(const std::string &response, rule_message &msg)
+{
+  // auto j = nlohmann::json::parse(response);
+  // msg.message = j.value("text", "");
+  msg.message = response;
+  std::cout<<msg.message<<std::endl;
+  exit(0);
+  return 0;  // 可以根据需要调整返回类型和错误处理
 }
 
-int llm_rule_checker::check_rule(const tracker_event<syscall_event>& e, rule_message &msg) {
-    std::string data_to_send = buildDataToSend(e);
-    std::string response = sendDataToLLM(data_to_send);
-    if (!response.empty()) {
-        std::cout<<"response is not empty"<<std::endl;
-        return parseLLMResponse(response, msg);
-    }
-    else {
-      std::cout << "LLM response is empty" << std::endl;
-      return -1;  // 表示错误
-    }
-
+int llm_rule_checker::check_rule(const tracker_event<syscall_event> &e, rule_message &msg)
+{
+  json data_to_send = buildDataToSend(e);
+  std::string response = sendDataToLLM(data_to_send);
+  std::cout << "llm check rule" << std::endl;
+  if (!response.empty())
+  {
+    std::cout << "response is not empty" << std::endl;
+    return parseLLMResponse(response, msg);
+  }
+  else
+  {
+    std::cout << "LLM response is empty" << std::endl;
+    return -1;  // 表示错误
+  }
 }
 
 /*

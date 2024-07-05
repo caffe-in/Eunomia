@@ -456,6 +456,10 @@ static const char *syscall_names_x86_64[] = {
     "clone3",
     "openat2",
     "pidfd_getfd",
+    "",
+    "",
+    "",
+    ""
 };
 static const size_t syscall_names_x86_64_size =
     sizeof(syscall_names_x86_64) / sizeof(char *);

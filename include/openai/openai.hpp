@@ -40,7 +40,6 @@
 #ifndef CURL_STATICLIB
 #include <curl/curl.h>
 #else 
-#include "curl/curl.h"
 #endif
 
 #include "nlohmann/json.hpp"  // nlohmann/json

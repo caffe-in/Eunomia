@@ -10,10 +10,17 @@ project(
 )
 
 verbose_message("Adding tests under ${CMAKE_PROJECT_NAME}Tests...")
-
+find_package(CURL REQUIRED)
 foreach(file ${test_sources})
+
   string(REGEX REPLACE "(.*/)([a-zA-Z0-9_ ]+)(\.cpp)" "\\2" test_name ${file}) 
   add_executable(${test_name}_Tests ${file})
+  if (CURL_FOUND)
+    target_link_libraries(${test_name}_Tests PRIVATE ${CURL_LIBRARIES})
+    target_include_directories(${test_name}_Tests PRIVATE ${CURL_INCLUDE_DIRS})
+  else()
+    message(FATAL_error "libcurl not found. Please install libcurl or check your configuration.")
+  endif()
 
   #
   # Set the compiler standard

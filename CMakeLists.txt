@@ -112,7 +112,9 @@ else()
 endif()
 if (CURL_FOUND)
   target_link_libraries(${PROJECT_NAME} PRIVATE ${CURL_LIBRARIES})
-  target_include_directories(${PROJECT_NAME} PRIVATE ${CURL_INCLUDE_DIRS})
+  message(STATUS "libcurl found. Include directory: ${CURL_INCLUDE_DIRS}")
+else()
+  message(FATAL_ERROR "libcurl not found. Please install libcurl or check your configuration.")
 endif()
 set_target_properties(
   ${PROJECT_NAME}
