@@ -146,14 +146,15 @@ int syscall_rule_checker::check_rule(const tracker_event<syscall_event> &e, rule
 
 // llm rule check impletation by caffein
 
-json llm_rule_checker::buildDataToSend(const std::vector<tracker_event<syscall_event>> &event_buffer)
+json llm_rule_checker::buildDataToSend(const std::vector<tracker_event<event_base>> &event_buffer)
 {
   nlohmann::json j;
   std::string combined_prompts;
   j["model"] = "gpt-3.5-turbo";
   for (const auto &e : event_buffer)
   {
-    combined_prompts += "Evaluate syscall : " + std::string(syscall_names_x86_64[e.data.syscall_id]) + "\n";
+    combined_prompts += e.data.buildDataToSend();
+    // "Evaluate syscall : " + std::string(syscall_names_x86_64[e.data.syscall_id]) + "\n";
   }
   j["prompt"] = combined_prompts;
   j["max_tokens"] = 100;

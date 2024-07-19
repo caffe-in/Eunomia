@@ -19,6 +19,7 @@
 #include <chrono>
 #include <thread>
 #include <condition_variable>
+#include "wrapper.h"
 
 using json = nlohmann::json;
 
@@ -171,11 +172,11 @@ public:
 
 // create by caffein for test, just using syscall event
 
-class llm_rule_checker : public rule_base<syscall_event>
+class llm_rule_checker : public rule_base<event_base>
 {
 private:
     std::string llm_server_url;
-    std::vector<tracker_event<syscall_event>> event_buffer;
+    std::vector<tracker_event<event_base>> event_buffer;
     std::mutex buffer_mutex;
     std::mutex response_mutex;
     std::string last_response;
@@ -185,7 +186,7 @@ private:
     std::thread flush_thread;
     bool stop_thread = false;
 
-    json buildDataToSend(const std::vector<tracker_event<syscall_event>>& event_buffer);
+    json buildDataToSend(const std::vector<tracker_event<event_base>>& event_buffer);
     std::string sendDataToLLM(const json& data);
     static size_t writeCallback(void* contents, size_t size, size_t nmemb, void* userp);
     std::string parseLLMResponse(const std::string& response);
@@ -218,6 +219,6 @@ public:
     llm_rule_checker(std::shared_ptr<sec_analyzer> analyzer_ptr) : rule_base(analyzer_ptr), flush_thread(&llm_rule_checker::flush_buffer, this) {
         std::cout << "llm_rule_checker created" << std::endl;
     }
-  int check_rule(const tracker_event<syscall_event>&e, rule_message &msg);
+  int check_rule(const tracker_event<event_base>&e, rule_message &msg);
 };
 #endif

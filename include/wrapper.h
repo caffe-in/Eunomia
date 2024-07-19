@@ -6,12 +6,13 @@
 #include "../bpftools/syscall/syscall.h"
 #include "../bpftools/process/process.h"
 #include "../bpftools/files/file_tracker.h"
+#include "include/eunomia/syscall_helper.h"
 using json = nlohmann::json;
 
 class event_base {
 public:
     virtual ~event_base() = default;
-    virtual json buildDataToSend() const = 0;
+    virtual std::string buildDataToSend() const = 0;
 };
 
 class syscall_event_wrapper : public event_base {
@@ -21,15 +22,8 @@ private:
 public:
     syscall_event_wrapper(const syscall_event& ev) : event(ev) {}
     
-    json buildDataToSend() const override {
-        return {
-            {"pid", event.pid},
-            {"ppid", event.ppid},
-            {"syscall_id", event.syscall_id},
-            {"mntns", event.mntns},
-            {"comm", std::string(event.comm)},
-            {"occur_times", event.occur_times}
-        };
+    std::string buildDataToSend() const override {
+        return std::string(syscall_names_x86_64[event.syscall_id]);
     }
 };
 
@@ -41,17 +35,8 @@ private:
 public:
     process_event_wrapper(const process_event& ev) : event(ev) {}
 
-    json buildDataToSend() const override {
-        return {
-            {"timestamp", event.common.timestamp},
-            {"event_type", event.common.event_type},
-            {"exit_code", event.exit_code},
-            {"pid", event.pid},
-            {"duration_ns", event.duration_ns},
-            {"comm", std::string(event.comm)},
-            {"filename", std::string(event.filename)},
-            {"exit_event", event.exit_event}
-        };
+    std::string buildDataToSend() const override {
+        return std::string("the comm:"+event.comm+","+"the file name:"+event.filename);
     }
 };
 
@@ -62,7 +47,7 @@ private:
 public:
     files_event_wrapper(const files_event& ev) : event(ev) {}
 
-    json buildDataToSend() const override {
+    std::string buildDataToSend() const override {
         json files_json = json::array(); // 创建一个JSON数组存储所有文件信息
         for (size_t i = 0; i < event.rows; ++i) {
             files_json.push_back({
