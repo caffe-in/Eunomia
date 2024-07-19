@@ -6,6 +6,7 @@
 #include "../bpftools/syscall/syscall.h"
 #include "../bpftools/process/process.h"
 #include "../bpftools/files/file_tracker.h"
+using json = nlohmann::json;
 
 class event_base {
 public:

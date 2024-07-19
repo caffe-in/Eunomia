@@ -146,16 +146,20 @@ int syscall_rule_checker::check_rule(const tracker_event<syscall_event> &e, rule
 
 // llm rule check impletation by caffein
 
-json llm_rule_checker::buildDataToSend(const tracker_event<syscall_event> &e)
+json llm_rule_checker::buildDataToSend(const std::vector<tracker_event<syscall_event>> &event_buffer)
 {
   nlohmann::json j;
+  std::string combined_prompts;
   j["model"] = "gpt-3.5-turbo";
-  j["prompt"] =
-      "Evaluate syscall : " + std::string(syscall_names_x86_64[e.data.syscall_id]);  // 根据syscall_event的具体结构调整
+  for (const auto &e : event_buffer)
+  {
+    combined_prompts += "Evaluate syscall : " + std::string(syscall_names_x86_64[e.data.syscall_id]) + "\n";
+  }
+  j["prompt"] = combined_prompts;
   j["max_tokens"] = 100;
   j["temperature"] = 0;
   j["messages"] = nlohmann::json::array(
-      {{ { "role", "system" }, { "content", "Check syscall, if the syscall may be dangerous, please tell me" } }});
+      { { { "role", "system" }, { "content", "Check syscall, if the syscall may be dangerous, please tell me" } } });
   return j;
 }
 std::string llm_rule_checker::sendDataToLLM(const json &data)
@@ -174,30 +178,49 @@ std::string llm_rule_checker::sendDataToLLM(const json &data)
   }
 }
 
-int llm_rule_checker::parseLLMResponse(const std::string &response, rule_message &msg)
+std::string llm_rule_checker::parseLLMResponse(const std::string &response)
 {
-  // auto j = nlohmann::json::parse(response);
-  // msg.message = j.value("text", "");
-  msg.message = response;
-  std::cout<<msg.message<<std::endl;
-  exit(0);
-  return 0;  // 可以根据需要调整返回类型和错误处理
+
+    try
+    {
+      auto json_response = nlohmann::json::parse(response);
+      std::string content = json_response["choices"][0]["message"]["content"];
+      return content;
+    }
+    catch (const std::exception &e)
+    {
+      std::cerr << "Failed to parse LLM response: " << e.what() << std::endl;
+      return "";
+    }
+  
 }
 
 int llm_rule_checker::check_rule(const tracker_event<syscall_event> &e, rule_message &msg)
 {
-  json data_to_send = buildDataToSend(e);
-  std::string response = sendDataToLLM(data_to_send);
-  std::cout << "llm check rule" << std::endl;
-  if (!response.empty())
   {
-    std::cout << "response is not empty" << std::endl;
-    return parseLLMResponse(response, msg);
+    std::lock_guard<std::mutex> lock(buffer_mutex);
+    event_buffer.push_back(e);  // 将事件添加到缓冲区
+    if (event_buffer.size() >= buffer_limit)
+    {
+      cond_var.notify_one();  // 如果达到了缓冲区大小限制，通知flushBuffer处理
+    }
+  }
+  std::string response_copy;
+  {
+    std::lock_guard<std::mutex> lock(response_mutex);
+    response_copy = last_response;  // 安全地获取最新的响应
+  }
+
+  if (!response_copy.empty())
+  {
+    msg.message = response_copy;  // 将获取的响应赋值给msg
+    std::cout << "Updated response is available." << std::endl;
+    return 0;  // 成功
   }
   else
   {
-    std::cout << "LLM response is empty" << std::endl;
-    return -1;  // 表示错误
+    // std::cout << "No updated response available yet." << std::endl;
+    return -1;  // 表示没有更新的数据
   }
 }
 

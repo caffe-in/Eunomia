@@ -14,6 +14,11 @@
 #include "syscall.h"
 #include <curl/curl.h>
 #include <json.hpp>
+#include <vector>
+#include <mutex>
+#include <chrono>
+#include <thread>
+#include <condition_variable>
 
 using json = nlohmann::json;
 
@@ -170,17 +175,49 @@ class llm_rule_checker : public rule_base<syscall_event>
 {
 private:
     std::string llm_server_url;
-    json buildDataToSend(const tracker_event<syscall_event>& e);
+    std::vector<tracker_event<syscall_event>> event_buffer;
+    std::mutex buffer_mutex;
+    std::mutex response_mutex;
+    std::string last_response;
+    std::condition_variable cond_var;
+    const size_t buffer_limit = 100; // 可调整大小
+    const std::chrono::seconds flush_interval = std::chrono::seconds(5); // 每5秒刷新一次
+    std::thread flush_thread;
+    bool stop_thread = false;
+
+    json buildDataToSend(const std::vector<tracker_event<syscall_event>>& event_buffer);
     std::string sendDataToLLM(const json& data);
     static size_t writeCallback(void* contents, size_t size, size_t nmemb, void* userp);
-    int parseLLMResponse(const std::string& response, rule_message& msg);
+    std::string parseLLMResponse(const std::string& response);
+
+    void flush_buffer() {
+        while (!stop_thread) {
+            std::unique_lock<std::mutex> lock(buffer_mutex);
+            cond_var.wait_for(lock, flush_interval, [this] { return event_buffer.size() >= buffer_limit || stop_thread; });
+            if (event_buffer.empty()) continue;
+
+            // 打包并发送数据到LLM
+            json data = buildDataToSend(event_buffer);
+            std::string response = sendDataToLLM(data);
+            {
+                std::lock_guard<std::mutex> resp_lock(response_mutex);
+                last_response =parseLLMResponse(response); // 更新存储的响应
+            }
+            event_buffer.clear();
+        }
+    }
+    
 
 public:
-  virtual ~llm_rule_checker() = default;
-  llm_rule_checker(std::shared_ptr<sec_analyzer> analyzer_ptr) : rule_base(analyzer_ptr)
-  {
-    std::cout<<"llm_rule_checker created"<<std::endl;
-  }
+  virtual ~llm_rule_checker() {
+    stop_thread = true;      // 设置停止标志
+    cond_var.notify_all();   // 通知所有等待的线程
+    if (flush_thread.joinable()) {
+        flush_thread.join(); // 等待线程结束
+    }}
+    llm_rule_checker(std::shared_ptr<sec_analyzer> analyzer_ptr) : rule_base(analyzer_ptr), flush_thread(&llm_rule_checker::flush_buffer, this) {
+        std::cout << "llm_rule_checker created" << std::endl;
+    }
   int check_rule(const tracker_event<syscall_event>&e, rule_message &msg);
 };
 #endif
