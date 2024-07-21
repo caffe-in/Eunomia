@@ -12,6 +12,7 @@ class event_base {
 public:
     virtual ~event_base() = default;
     virtual std::string buildDataToSend() const = 0;
+    virtual std::string buildDataToSend() const = 0;
 };
 
 class syscall_event_wrapper : public event_base
@@ -22,6 +23,8 @@ class syscall_event_wrapper : public event_base
 public:
     syscall_event_wrapper(const syscall_event& ev) : event(ev) {}
     
+    std::string buildDataToSend() const override {
+        return std::string(syscall_names_x86_64[event.syscall_id]);
     std::string buildDataToSend() const override {
         return std::string(syscall_names_x86_64[event.syscall_id]);
     }

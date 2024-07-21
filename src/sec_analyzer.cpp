@@ -228,6 +228,7 @@ json process_llm_rule_checker::buildDataToSend(const std::vector<tracker_event<p
 {
   nlohmann::json j;
   std::string combined_prompts;
+  std::string combined_prompts;
   j["model"] = "gpt-3.5-turbo";
   for (const auto &e : event_buffer)
   {
@@ -291,6 +292,24 @@ int process_llm_rule_checker::check_rule(const tracker_event<process_event> &e, 
 
   if (!response_copy.empty())
   {
+    std::lock_guard<std::mutex> lock(buffer_mutex);
+    event_buffer.push_back(e);  // 将事件添加到缓冲区
+    if (event_buffer.size() >= buffer_limit)
+    {
+      cond_var.notify_one();  // 如果达到了缓冲区大小限制，通知flushBuffer处理
+    }
+  }
+  std::string response_copy;
+  {
+    std::lock_guard<std::mutex> lock(response_mutex);
+    response_copy = last_response;  // 安全地获取最新的响应
+  }
+
+  if (!response_copy.empty())
+  {
+    msg.message = response_copy;  // 将获取的响应赋值给msg
+    std::cout << "Updated response is available." << std::endl;
+    return 0;  // 成功
     msg.message = response_copy;  // 将获取的响应赋值给msg
     std::cout << "Updated response is available." << std::endl;
     return 0;  // 成功

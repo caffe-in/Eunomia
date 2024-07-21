@@ -29,6 +29,12 @@
 #include <thread>
 #include <condition_variable>
 #include "wrapper.h"
+#include <vector>
+#include <mutex>
+#include <chrono>
+#include <thread>
+#include <condition_variable>
+#include "wrapper.h"
 
 using json = nlohmann::json;
 
@@ -207,6 +213,25 @@ private:
     json buildDataToSend(const std::vector<tracker_event<syscall_event>>& event_buffer);
     std::string sendDataToLLM(const json& data);
     static size_t writeCallback(void* contents, size_t size, size_t nmemb, void* userp);
+    std::string parseLLMResponse(const std::string& response);
+
+    void flush_buffer() {
+        while (!stop_thread) {
+            std::unique_lock<std::mutex> lock(buffer_mutex);
+            cond_var.wait_for(lock, flush_interval, [this] { return event_buffer.size() >= buffer_limit || stop_thread; });
+            if (event_buffer.empty()) continue;
+
+            // 打包并发送数据到LLM
+            json data = buildDataToSend(event_buffer);
+            std::string response = sendDataToLLM(data);
+            {
+                std::lock_guard<std::mutex> resp_lock(response_mutex);
+                last_response =parseLLMResponse(response); // 更新存储的响应
+            }
+            event_buffer.clear();
+        }
+    }
+    
     std::string parseLLMResponse(const std::string& response);
 
     void flush_buffer() {
