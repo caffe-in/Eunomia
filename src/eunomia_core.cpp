@@ -170,7 +170,11 @@ std::optional<std::size_t> eunomia_core::start_tracker(const tracker_config_data
   else if(config.name == "llm")
   {
     return core_tracker_manager.start_tracker(
-        create_default_tracker_with_sec_analyzer<syscall_tracker,llm_rule_checker>(config),config.name);
+        create_default_tracker_with_sec_analyzer<syscall_tracker,syscall_llm_rule_checker>(config),config.name)&&
+        core_tracker_manager.start_tracker(
+            create_default_tracker_with_sec_analyzer<process_tracker,process_llm_rule_checker>(config),config.name)&&
+        core_tracker_manager.start_tracker(
+            create_default_tracker_with_sec_analyzer<files_tracker,files_llm_rule_checker>(config),config.name);
   }
   else if (config.name == "tcpconnect")
   {
